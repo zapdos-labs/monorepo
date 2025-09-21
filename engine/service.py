@@ -1,19 +1,29 @@
 from __future__ import annotations
 import bentoml
+from pathlib import Path
 
-with bentoml.importing():
-    from transformers import pipeline
-
-
-EXAMPLE_INPUT = "Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson's cat, Whiskers, performed what witnesses are calling a 'miraculous and gravity-defying leap.' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson's backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as 'The Leap of the Century."
-
+# Define the shared directory path relative to the service file
+SHARED_DIR = Path(__file__).parent.parent / "shared_data"
+SHARED_DIR.mkdir(exist_ok=True) # Ensure the directory exists
 
 @bentoml.service
-class Summarization:
-    def __init__(self) -> None:
-        self.pipeline = pipeline('summarization')
+class SharedDataService:
+    """
+    A single service that handles both reading and writing to a shared directory.
+    """
+    @bentoml.api
+    def write_data(self, content: str) -> dict:
+        file_path = SHARED_DIR / "some_data.txt"
+        with open(file_path, "w") as f:
+            f.write(content)
+        print(f"Successfully wrote to {file_path}")
+        return {"status": "success", "path": str(file_path)}
 
     @bentoml.api
-    def summarize(self, text: str = EXAMPLE_INPUT) -> str:
-        result = self.pipeline(text)
-        return f"Hello world! Here's your summary: {result[0]['summary_text']}"
+    def read_data(self) -> str:
+        file_path = SHARED_DIR / "some_data.txt"
+        if not file_path.exists():
+            return "File not found. Please call 'write_data' first."
+        
+        with open(file_path, "r") as f:
+            return f.read()
