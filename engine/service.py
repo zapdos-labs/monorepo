@@ -1,29 +1,32 @@
+# service.py (your main gateway file)
 from __future__ import annotations
 import bentoml
-from pathlib import Path
 
-# Define the shared directory path relative to the service file
-SHARED_DIR = Path(__file__).parent.parent / "shared_data"
-SHARED_DIR.mkdir(exist_ok=True) # Ensure the directory exists
+# Step 1: Import the service CLASSES from the other files.
+from services.summarizer_service import SummarizationService
+from services.translator_service import TranslationService
 
 @bentoml.service
-class SharedDataService:
+class ApiGateway:
     """
-    A single service that handles both reading and writing to a shared directory.
+    This is the only service exposed to the internet.
     """
-    @bentoml.api
-    def write_data(self, content: str) -> dict:
-        file_path = SHARED_DIR / "some_data.txt"
-        with open(file_path, "w") as f:
-            f.write(content)
-        print(f"Successfully wrote to {file_path}")
-        return {"status": "success", "path": str(file_path)}
+    # Step 2: Use bentoml.depends() with the CLASSES.
+    # BentoML will create the instances for you.
+    summarization_svc = bentoml.depends(SummarizationService)
+    translation_svc = bentoml.depends(TranslationService)
 
     @bentoml.api
-    def read_data(self) -> str:
-        file_path = SHARED_DIR / "some_data.txt"
-        if not file_path.exists():
-            return "File not found. Please call 'write_data' first."
-        
-        with open(file_path, "r") as f:
-            return f.read()
+    async def process_text(self, text: str) -> dict:
+        summary = await self.summarization_svc.to_async.summarize(text)
+        translation = await self.translation_svc.to_async.translate(summary)
+
+        return {
+            "original_text": text,
+            "summary": summary,
+            "translation": translation,
+        }
+
+# Create an instance of the gateway itself. This is still necessary
+# for `bentoml serve` to know what to run.
+gateway = ApiGateway()
