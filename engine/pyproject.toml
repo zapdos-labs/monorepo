@@ -8,4 +8,51 @@ dependencies = [
     "bentoml>=1.4.24",
     "torch>=2.8.0",
     "transformers>=4.56.2",
+    "pydantic>=2.0.0",
+    "sentence-transformers>=2.2.0",
+    "torchvision>=0.22.0",
+    "torchaudio>=2.6.0",
+    "num2words>=0.5.14",
+    "timm>=1.0.19",
+    "accelerate>=1.10.1",
+    "outlines[gemini,openai]>=1.2.3",
+    "flash-attn",
+    "openai>=1.102.0",
+    "google-genai>=1.32.0",
+    "pillow>=11.0.0",
+    "whisperx",
+    "ctranslate2>=4.4.0",
+    "opencv-python>=4.12.0.88",
 ]
+
+# PyTorch CUDA wheels index
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+# Optional CPU index if needed
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu",    marker = "sys_platform == 'darwin'" },
+]
+torchvision = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu",    marker = "sys_platform == 'darwin'" },
+]
+torchaudio = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu",    marker = "sys_platform == 'darwin'" },
+]
+
+[tool.uv.extra-build-dependencies]
+flash-attn = [{ requirement = "torch", match-runtime = true }]
+
+[tool.uv.extra-build-variables]
+flash-attn = { FLASH_ATTENTION_SKIP_CUDA_BUILD = "TRUE" }

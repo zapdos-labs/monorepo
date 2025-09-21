@@ -2,7 +2,9 @@
 from __future__ import annotations
 import bentoml
 
-@bentoml.service
+@bentoml.service(
+    workers=1
+)
 class TranslationService:
     """A dummy service that 'translates' text."""
 
